@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# excalidraw-persistent
 
-## Getting Started
+A minimal self-hosted whiteboard built on top of the open-source [@excalidraw/excalidraw](https://github.com/excalidraw/excalidraw) package.
 
-First, run the development server:
+The board state is persisted server-side (on disk), so your drawings survive browser refreshes, cache clears, and are consistent across all your devices.
+
+> **Disclaimer**: This project is unofficial and not affiliated with or endorsed by the Excalidraw team.
+
+---
+
+## Features
+
+- 🎨 Full Excalidraw experience
+- 💾 Auto-save every 2 seconds after changes
+- 📦 Single Docker container (Next.js fullstack)
+- 🗂 State persisted to disk
+
+## What this is not
+
+- Not a collaboration tool (single user, single board)
+- Not Excalidraw+ (no cloud sync, no multiplayer, no paid features)
+- Not officially supported by the Excalidraw team
+
+---
+
+## Getting started
+
+### With Docker
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+docker run -d \
+  --name excalidraw-persistent \
+  -p 3004:3004 \
+  -v ./data:/app/data \
+  ghcr.io/malopolese/excalidraw-persistent:latest
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open [http://localhost:3004](http://localhost:3004).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### With Docker Compose
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```yaml
+services:
+  excalidraw:
+    image: ghcr.io/malopolese/excalidraw-persistent:latest
+    container_name: excalidraw-persistent
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    volumes:
+      - ./data:/app/data
+```
 
-## Learn More
+```bash
+docker compose up -d
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Development
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+git clone https://github.com/MaloPolese/excalidraw-persistent.git
+cd excalidraw-persistent
+npm install
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open [http://localhost:3000](http://localhost:3000).
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## How it works
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Frontend**: Excalidraw React component loaded client-side only (no SSR)
+- **Backend**: Next.js API route (`GET /api/board` / `POST /api/board`)
+- **Storage**: Board state saved as `data/board.json` on disk
+- **Auto-save**: Debounced 2s after last change, with a subtle `✓ Saved` indicator
+
+---
+
+## Credits
+
+This project uses [@excalidraw/excalidraw](https://github.com/excalidraw/excalidraw), which is [MIT licensed](https://github.com/excalidraw/excalidraw/blob/master/LICENSE).
+
+---
+
+## License
+
+MIT — see [LICENSE](./LICENSE)
