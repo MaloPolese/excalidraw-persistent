@@ -13,6 +13,7 @@ The board state is persisted server-side (on disk), so your drawings survive bro
 - 🎨 Full Excalidraw experience
 - 🔒 Password protection — board is private behind a session cookie
 - 💾 Auto-save every 2 seconds after changes
+- 🗄 Automatic compressed backups (gzip) on a configurable cron schedule
 - 📦 Single Docker container (Next.js fullstack)
 - 🗂 State persisted to disk
 
@@ -55,6 +56,8 @@ services:
     environment:
       BOARD_PASSWORD: your-password-here
       SECRET: your-secret-here
+      BACKUP_CRON: "0 2 * * *" # every day at 2am
+      BACKUP_KEEP: "7" # keep last 7 backups
 ```
 
 ```bash
@@ -63,10 +66,12 @@ docker compose up -d
 
 ## Environment variables
 
-| Variable         | Required | Description                               |
-| ---------------- | -------- | ----------------------------------------- |
-| `BOARD_PASSWORD` | ✅       | Password to access the board              |
-| `SECRET`         | ✅       | Random string for signing session cookies |
+| Variable         | Required | Default     | Description                               |
+| ---------------- | -------- | ----------- | ----------------------------------------- |
+| `BOARD_PASSWORD` | ✅       | —           | Password to access the board              |
+| `SECRET`         | ✅       | —           | Random string for signing session cookies |
+| `BACKUP_CRON`    | ❌       | `0 2 * * *` | Backup schedule in cron format            |
+| `BACKUP_KEEP`    | ❌       | `7`         | Number of compressed backups to keep      |
 
 Generate a secure `SECRET` with:
 
@@ -93,8 +98,32 @@ Open [http://localhost:3000](http://localhost:3000).
 
 - **Frontend**: Excalidraw React component loaded client-side only (no SSR)
 - **Backend**: Next.js API route (`GET /api/board` / `POST /api/board`)
+- **Auth**: Password checked on login, session stored in a signed `httpOnly` cookie (7 days)
 - **Storage**: Board state saved as `data/board.json` on disk
 - **Auto-save**: Debounced 2s after last change, with a subtle `✓ Saved` indicator
+- **Backups**: Runs on a cron schedule via `node-cron`, compresses `board.json` with gzip, stored in `data/backups/`. Old backups are rotated automatically.
+
+---
+
+### Backup cron examples
+
+| Expression    | Meaning                      |
+| ------------- | ---------------------------- |
+| `* * * * *`   | Every minute                 |
+| `0 * * * *`   | Every hour                   |
+| `0 */2 * * *` | Every 2 hours                |
+| `0 2 * * *`   | Every day at 2am _(default)_ |
+| `0 2 */2 * *` | Every 2 days at 2am          |
+| `0 2 * * 0`   | Every Sunday at 2am          |
+
+### Restoring a backup
+
+```bash
+# On your server, in the data/ folder
+gunzip -c backups/board.backup.2026-03-28-02-00.json.gz > board.json
+# Then restart the container
+docker compose restart excalidraw
+```
 
 ---
 
