@@ -11,6 +11,7 @@ The board state is persisted server-side (on disk), so your drawings survive bro
 ## Features
 
 - 🎨 Full Excalidraw experience
+- 🔒 Password protection — board is private behind a session cookie
 - 💾 Auto-save every 2 seconds after changes
 - 📦 Single Docker container (Next.js fullstack)
 - 🗂 State persisted to disk
@@ -32,6 +33,8 @@ docker run -d \
   --name excalidraw-persistent \
   -p 3004:3004 \
   -v ./data:/app/data \
+  -e BOARD_PASSWORD=your-password-here \
+  -e SECRET=your-secret-here \
   ghcr.io/malopolese/excalidraw-persistent:latest
 ```
 
@@ -49,11 +52,29 @@ services:
       - "3004:3004"
     volumes:
       - ./data:/app/data
+    environment:
+      BOARD_PASSWORD: your-password-here
+      SECRET: your-secret-here
 ```
 
 ```bash
 docker compose up -d
 ```
+
+## Environment variables
+
+| Variable         | Required | Description                               |
+| ---------------- | -------- | ----------------------------------------- |
+| `BOARD_PASSWORD` | ✅       | Password to access the board              |
+| `SECRET`         | ✅       | Random string for signing session cookies |
+
+Generate a secure `SECRET` with:
+
+```bash
+openssl rand -hex 32
+```
+
+---
 
 ## Development
 
