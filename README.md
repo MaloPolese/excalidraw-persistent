@@ -12,7 +12,7 @@ The board state is persisted server-side (on disk), so your drawings survive bro
 
 - 🎨 Full Excalidraw experience
 - 🔒 Password protection — board is private behind a session cookie
-- 💾 Auto-save every 2 seconds after changes
+- 💾 Auto-save after changes
 - 🗄 Automatic compressed backups (gzip) on a configurable cron schedule
 - 📦 Single Docker container (Next.js fullstack)
 - 🗂 State persisted to disk
@@ -100,7 +100,7 @@ Open [http://localhost:3000](http://localhost:3000).
 - **Backend**: Next.js API route (`GET /api/board` / `POST /api/board`)
 - **Auth**: Password checked on login, session stored in a signed `httpOnly` cookie (7 days)
 - **Storage**: Board state saved as `data/board.json` on disk
-- **Auto-save**: Debounced 2s after last change, with a subtle `✓ Saved` indicator
+- **Auto-save**: Debounced 300ms after last change.
 - **Backups**: Runs on a cron schedule via `node-cron`, compresses `board.json` with gzip, stored in `data/backups/`. Old backups are rotated automatically.
 
 ---

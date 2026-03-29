@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import { Excalidraw } from "@excalidraw/excalidraw";
+import { Subject, fromEvent, merge } from "rxjs";
+import { debounceTime, filter, tap } from "rxjs/operators";
 import type {
   ExcalidrawImperativeAPI,
   AppState,
@@ -9,20 +11,45 @@ import type {
 } from "@excalidraw/excalidraw/types";
 import "@excalidraw/excalidraw/index.css";
 
-type SaveStatus = "idle" | "saving" | "saved" | "error";
+const SAVE_DEBOUNCE_MS = 300;
+
+async function persistBoard(api: ExcalidrawImperativeAPI): Promise<void> {
+  const elements = api.getSceneElements();
+  const appState = api.getAppState();
+  const files = api.getFiles();
+
+  const {
+    collaborators,
+    isLoading,
+    errorMessage,
+    contextMenu,
+    openMenu,
+    draggingElement,
+    resizingElement,
+    multiElement,
+    editingElement,
+    ...serializableAppState
+  } = appState as AppState & { [key: string]: unknown };
+
+  const res = await fetch("/api/board", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ elements, appState: serializableAppState, files }),
+  });
+
+  if (!res.ok) throw new Error("Save failed");
+}
 
 export default function ExcalidrawWrapper() {
   const [initialData, setInitialData] = useState<{
-    elements: Awaited<ReturnType<ExcalidrawImperativeAPI["getSceneElements"]>>;
+    elements: [];
     appState: Partial<AppState>;
     files: BinaryFiles;
   } | null>(null);
 
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const excalidrawApiRef = useRef<ExcalidrawImperativeAPI | null>(null);
-  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const save$ = useRef(new Subject<void>());
 
-  // Load board on mount
   useEffect(() => {
     fetch("/api/board")
       .then((res) => res.json())
@@ -31,7 +58,6 @@ export default function ExcalidrawWrapper() {
           elements: data.elements ?? [],
           appState: {
             ...(data.appState ?? {}),
-            // Always reset collaboration state
             collaborators: new Map(),
           },
           files: data.files ?? {},
@@ -44,60 +70,39 @@ export default function ExcalidrawWrapper() {
 
   const saveBoard = useCallback(async () => {
     if (!excalidrawApiRef.current) return;
-
-    const elements = excalidrawApiRef.current.getSceneElements();
-    const appState = excalidrawApiRef.current.getAppState();
-    const files = excalidrawApiRef.current.getFiles();
-
-    // Strip non-serializable / session-only appState fields
-    const {
-      collaborators,
-      isLoading,
-      errorMessage,
-      contextMenu,
-      openMenu,
-      draggingElement,
-      resizingElement,
-      multiElement,
-      editingElement,
-      ...serializableAppState
-    } = appState as AppState & { [key: string]: unknown };
-
-    void collaborators;
-    void isLoading;
-    void errorMessage;
-    void contextMenu;
-    void openMenu;
-    void draggingElement;
-    void resizingElement;
-    void multiElement;
-    void editingElement;
-
-    setSaveStatus("saving");
     try {
-      const res = await fetch("/api/board", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          elements,
-          appState: serializableAppState,
-          files,
-        }),
-      });
-
-      if (!res.ok) throw new Error("Save failed");
-      setSaveStatus("saved");
-      setTimeout(() => setSaveStatus("idle"), 2000);
+      await persistBoard(excalidrawApiRef.current);
+      console.info("[board] Saved");
     } catch {
-      setSaveStatus("error");
-      setTimeout(() => setSaveStatus("idle"), 3000);
+      console.error("[board] Save failed");
     }
   }, []);
 
-  const handleChange = useCallback(() => {
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(saveBoard, 2000);
+  useEffect(() => {
+    const onChange$ = save$.current.pipe(filter(() => !document.hidden));
+
+    const onFlush$ = merge(
+      fromEvent(window, "blur"),
+      fromEvent(document, "visibilitychange").pipe(
+        filter(() => document.hidden),
+      ),
+    ).pipe(filter(() => excalidrawApiRef.current !== null));
+
+    const subscription = merge(onChange$, onFlush$)
+      .pipe(
+        debounceTime(SAVE_DEBOUNCE_MS),
+        tap(() => saveBoard()),
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [saveBoard]);
+
+  const handleChange = useCallback(() => {
+    save$.current.next();
+  }, []);
 
   if (!initialData) {
     return (
@@ -128,32 +133,6 @@ export default function ExcalidrawWrapper() {
         initialData={initialData}
         onChange={handleChange}
       />
-
-      {/* Save status indicator */}
-      {saveStatus !== "idle" && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: "16px",
-            right: "16px",
-            padding: "6px 12px",
-            borderRadius: "6px",
-            fontSize: "12px",
-            fontFamily: "monospace",
-            zIndex: 9999,
-            pointerEvents: "none",
-            transition: "opacity 0.3s ease",
-            background: saveStatus === "error" ? "#fee2e2" : "#f0fdf4",
-            color: saveStatus === "error" ? "#dc2626" : "#16a34a",
-            border: `1px solid ${saveStatus === "error" ? "#fca5a5" : "#86efac"}`,
-            boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
-          }}
-        >
-          {saveStatus === "saving" && "💾 Saving..."}
-          {saveStatus === "saved" && "✓ Saved"}
-          {saveStatus === "error" && "✗ Save failed"}
-        </div>
-      )}
     </div>
   );
 }
