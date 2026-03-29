@@ -2,7 +2,10 @@ name: Release Drafter
 
 on:
   pull_request_target:
-    types: [opened, reopened, synchronize, edited, closed]
+    types: [opened, reopened, synchronize, edited]
+  push:
+    branches:
+      - main
 
 jobs:
   update_release_draft:
