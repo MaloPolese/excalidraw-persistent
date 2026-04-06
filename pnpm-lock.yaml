@@ -5,16 +5,16 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
+  nanoid@>=4.0.0 <5.0.9: '>=5.0.9'
   dompurify@<3.2.4: '>=3.2.4'
-  dompurify@<3.3.2: '>=3.3.2'
-  dompurify@<=3.3.1: '>=3.3.2'
-  dompurify@>=3.1.3 <3.2.7: '>=3.2.7'
-  dompurify@>=3.1.3 <=3.3.1: '>=3.3.2'
-  lodash-es@<=4.17.23: '>=4.18.0'
-  lodash-es@>=4.0.0 <=4.17.23: '>=4.18.0'
   mermaid@>=10.9.0-rc.1 <10.9.4: '>=10.9.4'
   nanoid@<3.3.8: '>=3.3.8'
-  nanoid@>=4.0.0 <5.0.9: '>=5.0.9'
+  dompurify@>=3.1.3 <3.2.7: '>=3.2.7'
+  dompurify@<3.3.2: '>=3.3.2'
+  dompurify@>=3.1.3 <=3.3.1: '>=3.3.2'
+  dompurify@<=3.3.1: '>=3.3.2'
+  lodash-es@>=4.0.0 <=4.17.23: '>=4.18.0'
+  lodash-es@<=4.17.23: '>=4.18.0'
 
 importers:
 
@@ -2158,11 +2158,6 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  nanoid@4.0.2:
-    resolution: {integrity: sha512-7ZtY5KTCNheRGfEFxnedV5zFiORN1+Y1N6zvPTnHQd8ENUvfaDBeuJDZb2bN/oXwXxu3qkTXDzy57W5vAmDTBw==}
-    engines: {node: ^14 || ^16 || >=18}
-    hasBin: true
-
   nanoid@5.1.7:
     resolution: {integrity: sha512-ua3NDgISf6jdwezAheMOk4mbE1LXjm1DfMUDMuJf4AqxLFK3ccGpgWizwa5YV7Yz9EpXwEaWoRXSb/BnV0t5dQ==}
     engines: {node: ^18 || >=20}
@@ -2992,7 +2987,7 @@ snapshots:
       jotai-scope: 0.7.2(jotai@2.11.0(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)
       lodash.debounce: 4.0.8
       lodash.throttle: 4.1.1
-      nanoid: 4.0.2
+      nanoid: 5.1.7
       open-color: 1.9.1
       pako: 2.0.3
       perfect-freehand: 1.2.0
@@ -5084,8 +5079,6 @@ snapshots:
       object-assign: 4.1.1
 
   nanoid@3.3.11: {}
-
-  nanoid@4.0.2: {}
 
   nanoid@5.1.7: {}
 
