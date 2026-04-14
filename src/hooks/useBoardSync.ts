@@ -42,9 +42,7 @@ export function useBoardSync({ apiRef, onStatusChange }: UseBoardSyncOptions) {
       scheduler.destroy();
       destroySse();
     };
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   return {
     markDirty: () => schedulerRef.current?.emit(),
