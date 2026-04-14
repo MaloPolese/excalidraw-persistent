@@ -1,5 +1,5 @@
 import { Subject, fromEvent, merge } from "rxjs";
-import { debounceTime, filter, tap } from "rxjs/operators";
+import { debounceTime, filter } from "rxjs/operators";
 
 const SAVE_DEBOUNCE_MS = 500;
 

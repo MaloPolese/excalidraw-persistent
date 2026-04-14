@@ -1,5 +1,5 @@
 import { fromEventPattern } from "rxjs";
-import { debounceTime, tap } from "rxjs/operators";
+import { debounceTime } from "rxjs/operators";
 
 export function createSseNotify(onServerUpdate: () => void, tabId: string) {
   const es = new EventSource(`/api/board/notify?tabId=${tabId}`);

@@ -1,6 +1,5 @@
 import type {
   ExcalidrawImperativeAPI,
-  AppState,
   BinaryFiles,
 } from "@excalidraw/excalidraw/types";
 import {
@@ -15,16 +14,6 @@ export type SyncResponse = {
   delta: CrdtElement[];
   files: BinaryFiles;
 };
-
-const NON_SERIALIZABLE_APP_STATE_KEYS = [
-  "collaborators",
-  "isLoading",
-  "errorMessage",
-  "contextMenu",
-  "openMenu",
-  "resizingElement",
-  "multiElement",
-];
 
 export async function syncBoard(
   api: ExcalidrawImperativeAPI,

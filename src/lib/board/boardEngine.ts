@@ -1,6 +1,7 @@
 import type {
   ExcalidrawImperativeAPI,
   BinaryFiles,
+  BinaryFileData,
 } from "@excalidraw/excalidraw/types";
 import {
   buildVersionMap,
@@ -37,7 +38,7 @@ export function createBoardEngine(
     }
 
     if (Object.keys(files).length) {
-      api.addFiles(Object.values(files) as any);
+      api.addFiles(Object.values(files) as BinaryFileData[]);
     }
 
     knownVersions = updatedVersions;
