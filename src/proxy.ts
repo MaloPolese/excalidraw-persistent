@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { verifyToken } from "@/lib/auth/auth";
 
 const PUBLIC_PATHS = ["/login", "/api/login"];
 
