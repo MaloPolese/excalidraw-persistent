@@ -1,16 +1,17 @@
 import type {
   ExcalidrawImperativeAPI,
   BinaryFiles,
-  BinaryFileData,
 } from "@excalidraw/excalidraw/types";
 import {
   buildVersionMap,
+  computeDelta,
   mergeElements,
   type CrdtElement,
   type VersionMap,
 } from "@/lib/crdt";
 import { syncBoard } from "@/lib/board/boardSync";
 import { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
+import { SyncReason } from "./syncScheduler";
 
 export type BoardEngine = ReturnType<typeof createBoardEngine>;
 
@@ -19,26 +20,50 @@ export function createBoardEngine(
 ) {
   let knownVersions: VersionMap = {};
 
-  async function sync(tabId: string): Promise<void> {
-    const api = apiRef.current;
+  type SyncPlan = {
+    clientDelta: CrdtElement[];
+    current: CrdtElement[];
+    files: BinaryFiles;
+  };
 
+  async function prepareSync(reason: SyncReason): Promise<SyncPlan | null> {
+    const api = apiRef.current;
+    if (!api) return null;
+
+    const current =
+      api.getSceneElementsIncludingDeleted() as unknown as CrdtElement[];
+
+    const clientDelta = computeDelta(current, knownVersions);
+
+    if (reason === "dirty" && clientDelta.length === 0) {
+      return null;
+    }
+
+    return {
+      clientDelta,
+      current,
+      files: api.getFiles(),
+    };
+  }
+
+  async function sync(tabId: string, plan: SyncPlan): Promise<void> {
+    const api = apiRef.current;
     if (!api) return;
 
     const { serverDelta, files, updatedVersions } = await syncBoard(
       api,
       tabId,
       knownVersions,
+      plan.clientDelta,
     );
 
     if (serverDelta.length) {
-      const current =
-        api.getSceneElementsIncludingDeleted() as unknown as CrdtElement[];
-      const merged = mergeElements(current, serverDelta);
-      api.updateScene({ elements: merged as unknown as [] });
+      const merged = mergeElements(plan.current, serverDelta);
+      api.updateScene({ elements: merged as [] });
     }
 
     if (Object.keys(files).length) {
-      api.addFiles(Object.values(files) as BinaryFileData[]);
+      api.addFiles(Object.values(files));
     }
 
     knownVersions = updatedVersions;
@@ -68,5 +93,5 @@ export function createBoardEngine(
     }
   }
 
-  return { sync, bootstrap };
+  return { sync, bootstrap, prepareSync };
 }

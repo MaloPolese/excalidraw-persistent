@@ -19,6 +19,7 @@ export async function syncBoard(
   api: ExcalidrawImperativeAPI,
   tabId: string,
   knownVersions: VersionMap,
+  clientDelta: CrdtElement[],
 ): Promise<{
   serverDelta: CrdtElement[];
   files: BinaryFiles;
@@ -26,7 +27,6 @@ export async function syncBoard(
 }> {
   const currentElements =
     api.getSceneElementsIncludingDeleted() as unknown as CrdtElement[];
-  const clientDelta = computeDelta(currentElements, knownVersions);
 
   const res = await fetch("/api/board/sync", {
     method: "POST",

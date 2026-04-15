@@ -27,16 +27,17 @@ export function useBoardSync({ apiRef, onStatusChange }: UseBoardSyncOptions) {
       .bootstrap(TAB_ID)
       .catch(() => console.error("[sync] Initial load failed"));
 
-    const scheduler = createSyncScheduler(() => {
+    const scheduler = createSyncScheduler(async (reason) => {
+      const plan = await engine.prepareSync(reason);
+      if (!plan) return;
+
       onStatusChange("syncing");
-      engine
-        .sync(TAB_ID)
-        .then(() => onStatusChange("synced"))
-        .catch(() => onStatusChange("error"));
+      await engine.sync(TAB_ID, plan).catch(() => onStatusChange("error"));
+      onStatusChange("synced");
     });
     schedulerRef.current = scheduler;
 
-    const destroySse = createSseNotify(scheduler.emit, TAB_ID);
+    const destroySse = createSseNotify(() => scheduler.emit("remote"), TAB_ID);
 
     return () => {
       scheduler.destroy();
@@ -47,6 +48,6 @@ export function useBoardSync({ apiRef, onStatusChange }: UseBoardSyncOptions) {
   }, []);
 
   return {
-    markDirty: () => schedulerRef.current?.emit(),
+    markDirty: () => schedulerRef.current?.emit("dirty"),
   };
 }
