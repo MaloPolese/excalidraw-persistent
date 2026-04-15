@@ -1,11 +1,5 @@
 import { NextRequest } from "next/server";
-
-type SseClient = {
-  controller: ReadableStreamDefaultController;
-  tabId: string;
-};
-
-const clients = new Set<SseClient>();
+import { addClient, removeClient } from "@/lib/sseClients";
 
 export async function GET(req: NextRequest) {
   const encoder = new TextEncoder();
@@ -19,20 +13,22 @@ export async function GET(req: NextRequest) {
 
   const stream = new ReadableStream({
     start(controller) {
-      // heartbeat
-      const interval = setInterval(() => {
-        controller.enqueue(encoder.encode(": ping\n\n"));
-      }, 15000);
+      const client = { controller, tabId };
+      addClient(client);
 
-      const client: SseClient = { controller, tabId };
-      clients.add(client);
       controller.enqueue(encoder.encode("event: connected\ndata: {}\n\n"));
 
-      console.log("Client connected:", tabId);
+      const heartbeat = setInterval(() => {
+        try {
+          controller.enqueue(encoder.encode(": ping\n\n"));
+        } catch {
+          clearInterval(heartbeat);
+        }
+      }, 15000);
 
       req.signal.addEventListener("abort", () => {
-        clients.delete(client);
-        clearInterval(interval);
+        removeClient(client);
+        clearInterval(heartbeat);
         try {
           controller.close();
         } catch {}
@@ -47,20 +43,4 @@ export async function GET(req: NextRequest) {
       Connection: "keep-alive",
     },
   });
-}
-
-export function notifyBoardUpdated(senderTabId: string): void {
-  const encoder = new TextEncoder();
-
-  for (const client of clients) {
-    if (client.tabId === senderTabId) continue;
-
-    try {
-      client.controller.enqueue(
-        encoder.encode("event: board_updated\ndata: {}\n\n"),
-      );
-    } catch {
-      clients.delete(client);
-    }
-  }
 }

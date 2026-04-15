@@ -8,7 +8,7 @@ import {
   type VersionMap,
   computeFilesDelta,
 } from "@/lib/crdt";
-import { notifyBoardUpdated } from "../notify/route";
+import { notifyBoardUpdated } from "@/lib/sseClients";
 
 const DATA_PATH = path.join(process.cwd(), "data", "board.json");
 
