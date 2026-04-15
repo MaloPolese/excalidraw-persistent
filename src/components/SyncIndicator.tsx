@@ -32,6 +32,24 @@ export default function SyncIndicator({ onRegister }: Props) {
 
   if (status === "idle") return null;
 
+  const styles = {
+    syncing: {
+      background: "#fffbeb",
+      color: "#d97706",
+      border: "1px solid #fcd34d",
+    },
+    synced: {
+      background: "#f0fdf4",
+      color: "#16a34a",
+      border: "1px solid #86efac",
+    },
+    error: {
+      background: "#fee2e2",
+      color: "#dc2626",
+      border: "1px solid #fca5a5",
+    },
+  }[status];
+
   return (
     <div
       style={{
@@ -44,11 +62,9 @@ export default function SyncIndicator({ onRegister }: Props) {
         fontFamily: "monospace",
         zIndex: 9999,
         pointerEvents: "none",
-        transition: "opacity 0.3s ease",
-        background: status === "error" ? "#fee2e2" : "#f0fdf4",
-        color: status === "error" ? "#dc2626" : "#16a34a",
-        border: `1px solid ${status === "error" ? "#fca5a5" : "#86efac"}`,
+        transition: "opacity 0.5s ease",
         boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+        ...styles,
       }}
     >
       {status === "syncing" && "Syncing..."}
