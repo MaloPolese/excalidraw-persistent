@@ -22,7 +22,6 @@ export function createBoardEngine(
 
   type SyncPlan = {
     clientDelta: CrdtElement[];
-    current: CrdtElement[];
     files: BinaryFiles;
   };
 
@@ -41,7 +40,6 @@ export function createBoardEngine(
 
     return {
       clientDelta,
-      current,
       files: api.getFiles(),
     };
   }
@@ -57,9 +55,14 @@ export function createBoardEngine(
       plan.clientDelta,
     );
 
+    const current =
+      api.getSceneElementsIncludingDeleted() as unknown as CrdtElement[];
     if (serverDelta.length) {
-      const merged = mergeElements(plan.current, serverDelta);
+      const merged = mergeElements(current, serverDelta);
       api.updateScene({ elements: merged as [] });
+      knownVersions = buildVersionMap(merged);
+    } else {
+      knownVersions = buildVersionMap(current);
     }
 
     if (Object.keys(files).length) {
